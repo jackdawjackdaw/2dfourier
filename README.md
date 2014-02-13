@@ -1,7 +1,7 @@
 # 2dfourier
 C.Coleman-Smith (cec24@phy.duke.edu)
 
-Routines for carrying out the 2d Fourier decomposition and computing associated measures of event roughness. 
+Routines for carrying out a 2d Fourier decomposition for Heavy Ion events  and computing associated measures of event roughness. 
 
 ### Publication details
 "Classification of initial state granularity via 2d Fourier Expansion" [1]
