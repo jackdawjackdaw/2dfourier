@@ -4,12 +4,19 @@ C.Coleman-Smith (cec24@phy.duke.edu)
 
 Routines for carrying out a 2d Fourier decomposition for Heavy Ion events  and computing associated measures of event roughness. 
 
-### Publication details
+### Citation details
 "Classification of initial state granularity via 2d Fourier Expansion" [1]
 
 Christopher E. Coleman-Smith (Duke U.), Hannah Petersen (Duke U. & Frankfurt U., FIAS), Robert L. Wolpert (Duke U.). Apr 2012. 9 pp.
 
 Published in J.Phys. G40 (2013) 095103 
+
+Please use the following citation if you use this code
+    \bibitem{ColemanSmith:2012ka} 
+    C.~E.~Coleman-Smith, H.~Petersen and R.~L.~Wolpert,
+    %``Classification of initial state granularity via 2d Fourier Expansion,''
+    J.\ Phys.\ G {\bf 40}, 095103 (2013)
+    [arXiv:1204.5774 [hep-ph]].
 
 # Getting Started
 
