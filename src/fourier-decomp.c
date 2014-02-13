@@ -1,7 +1,4 @@
-#include <gsl/gsl_matrix.h>
-#include <gsl/gsl_vector.h>
-#include <gsl/gsl_sf.h>
-
+#include "fourier-decomp.h"
 
 /**
  * setup the decomp, allocs the variable grid
@@ -29,10 +26,11 @@ void fill_grid_(int *i, int *j, double *val)
 }
 
 /**
- * compute the fourier decomposition of the now filled grid
- * setup to be callable from fortran
+ * compute the fourier decomposition of a filled  grid
+ * and write the results out to a file
  * 
- * results are written to a file given by outname
+ * this function was setup to be callable from a fortran hydro-simulator routine 
+ * see also the example driver for another way to compute the coeffs
  */
 
 void do_fdecomp_(int* mmax_in, int* nmax_in, char* outname[])
@@ -42,8 +40,8 @@ void do_fdecomp_(int* mmax_in, int* nmax_in, char* outname[])
 	int i,j;
 	double cmx =0.0, cmy=0.0;
 	FILE* fptr;
-	gsl_matrix * amnRe; 
-	gsl_matrix * amnIm;
+	gsl_matrix * amnRe = NULL;  
+	gsl_matrix * amnIm = NULL;
   char buffer[256];
 
   if(*mmax_in <= 0 || *mmax_in > MAXMDECOMP){
@@ -61,7 +59,7 @@ void do_fdecomp_(int* mmax_in, int* nmax_in, char* outname[])
 
 	compute_com(grid, nptsGrid, &cmx, &cmy);
 	
-	printf("#(c) cm (%lf %lf)\n", cmx, cmy);
+	fprintf(stderr, "# cm (%lf %lf)\n", cmx, cmy);
 	fprintf(stderr, "# started computing fdecomp\n");
 	compute_amn(mmax, nmax, grid, nptsGrid, amnRe, amnIm, cmx, cmy);
 	
@@ -79,9 +77,7 @@ void do_fdecomp_(int* mmax_in, int* nmax_in, char* outname[])
 	
 	gsl_matrix_free(amnRe);
 	gsl_matrix_free(amnIm);
-
 }
-
 
 /**
  * Compute the fourier decomposition of array to -m:m in angular components and 1:nmax in radial components
@@ -176,7 +172,10 @@ void compute_amn(int mmax, int nmax, gsl_matrix *array, int npts, gsl_matrix* Am
 					phiIm = phiMod * sin(mtemp*gsl_matrix_get(thMat, k, l));
 					ftemp = gsl_matrix_get(array, k, l);
 
-					// compensated summation
+					/* kahan compensated summation (http://en.wikipedia.org/wiki/Kahan_summation_algorithm)
+           * we're adding up a lot of little numbers here
+           * this trick keeps accumulation errors from, well, accumulating
+           */
 					alphaRe = AmnRealAcc;
 					epsRe += ftemp * phiRe;
 					AmnRealAcc = alphaRe + epsRe;
@@ -186,15 +185,10 @@ void compute_amn(int mmax, int nmax, gsl_matrix *array, int npts, gsl_matrix* Am
 					epsIm += ftemp * phiIm;
 					AmnImAcc = alphaIm + epsIm;
 					epsIm += (alphaIm - AmnImAcc);
-
-					
-					/* AmnImAcc += ftemp * phiIm; */
-					/* AmnRealAcc += ftemp * phiRe; */
 				}
 			}
 			// and save the coeffs
 			gsl_matrix_set(AmnReal, i, j, AmnRealAcc*dxy);
-			// where is this -1 coming from? it's in the R code?
 			gsl_matrix_set(AmnIm, i, j, -1.0 * AmnImAcc*dxy);
 		}
 	}

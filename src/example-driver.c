@@ -1,17 +1,31 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <assert.h>
 
 #include "fourier-decomp.h"
 
 /**
  * ccs, 13.02.2014
- * example driver routine, reads an input file and computes the decomposition moments
- * Amn
+ * example driver routine, reads an input file and computes the decomposition moments Amn
+ *
+ * the number points to use in the grid and the maximum moments to compute are taken as arguments
+ * 
+ * input file is a *2d* grid of energy density representing the initial-state of an event (or really any part of the evolution)
+ * 
+ * each line:
+ * ix iy edensity
+ *
+ * ix: (int) x coordinate of the cell
+ * iy: (int) y coordinate of the cell
+ * edensity: (double) energy density in the cell
+ *
+ * 
  */ 
 
+
 int main (int argc, char* argv[]){
-	FILE *fptr;
+	FILE *fptr = NULL;
 	char buffer[256];
 	gsl_matrix *midplane;
 	gsl_matrix *AmnRe, *AmnIm;
@@ -19,27 +33,41 @@ int main (int argc, char* argv[]){
 	int mmax=2, nmax=4;
 	int npts = 200;
 	int xtemp, ytemp;
-	double etemp;
+	double etemp = 0.0;
 
 	double cmx = 0.0, cmy = 0.0;
-	double dx = 2*(fabs(xmin))/((double)npts-1);
-
+	double dx = 0.0; 
 	double mod = 0.0;
 	
-	if(argc < 2){
-		printf("# run with path to midplane file\n");
+	if(argc < 5){
+    fprintf(stderr, "# requries args:\n# <s:input-file> <i:npts> <i:nmax> <i:mmax> ");
 		exit(-1);
 	}
 
-	sprintf(buffer, "%s", argv[1]);
-	
+  sprintf(buffer, "%s", argv[1]);
 	printf("# reading from: %s\n", buffer);
-	
-	fptr = fopen(buffer, "r");
-	midplane = gsl_matrix_alloc(npts, npts);
-	
 
-	while(fscanf(fptr, "%d %d %*d %lf %*f %*f %*f %*f",
+
+  npts = atoi(argv[2]);
+  assert(npts > 0);
+  printf("# input grid size: (%d x %d)\n", npts, npts);
+
+  mmax = atoi(argv[3]);
+  assert(mmax > 0 && mmax < MMAXDECOMP);
+  nmax = atoi(argv[4]);
+  assert(nmax > 0 && nmax < NMAXDECOMP);
+  printf("# moments computed up to: %d %d\n", mmax, nmax);
+  
+  dx = 2*(fabs(xmin))/((double)npts-1);
+	midplane = gsl_matrix_alloc(npts, npts);
+
+  fptr = fopen(buffer, "r");
+  if(!fptr){
+    fprintf(stderr, "# cannot open %s\n", buffer);
+    exit(-1);
+  }
+
+	while(fscanf(fptr, "%d %d %lf",
 							 &xtemp, &ytemp, &etemp) != EOF){
 		gsl_matrix_set(midplane, xtemp - 1, ytemp -1, etemp);
 	};
@@ -49,26 +77,16 @@ int main (int argc, char* argv[]){
 	AmnRe = gsl_matrix_alloc((2*mmax+1), nmax);
 	AmnIm = gsl_matrix_alloc((2*mmax+1), nmax);
 
+  /* get the cm of this event */
 	compute_com(midplane, npts, &cmx, &cmy);
-	
+
+  /* print out the cm in the scaled coors and the indicies of the actual grid cell */
 	printf("# com: %lf %lf (%d %d)\n", cmx, cmy, (int)((cmx+(fabs(xmin)))/dx), (int)((cmy+(fabs(xmin)))/dx));
-	
-	compute_amn(mmax, nmax, midplane, npts, AmnRe, AmnIm, 0, 0); // first compute with cm at origin of coords
 
-	mod = 0;
-	for(i = 0; i < (2*mmax+1); i++){
-		for(j = 0; j < nmax; j++){
-			printf("(%d %d)[%lf %lf] ", -mmax+i, j, gsl_matrix_get(AmnRe, i, j), gsl_matrix_get(AmnIm, i,j));
-			mod += pow(gsl_matrix_get(AmnRe, i, j),2.0) + pow(gsl_matrix_get(AmnIm, i,j), 2.0);
-		}
-		printf("\n");
-	}
-	printf("Mod: %lf\n", mod);
-
-	xmin = -1.0;
-	
-	printf("## xmin = %lf\n", xmin);
+  /* do the decomp  */
 	compute_amn(mmax, nmax, midplane, npts, AmnRe, AmnIm, cmx, cmy); // first compute with cm at origin of coords
+
+  /* print out the coeffs and compute the L2 norm */
 	mod = 0;
 	for(i = 0; i < (2*mmax+1); i++){
 		for(j = 0; j < nmax; j++){
