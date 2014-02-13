@@ -4,6 +4,7 @@
 #include <gsl/gsl_matrix.h>
 #include <gsl/gsl_vector.h>
 #include <gsl/gsl_sf.h>
+#include <math.h>
 
 /**
  * ccs, 14.09.2012
@@ -14,7 +15,7 @@ void compute_com(gsl_matrix *array, int npts,double* cmx, double* cmy);
 void setup_fdecomp_(int *ngrid);
 void free_fdecomp_();
 void fill_grid_(int *i, int *j, double *val);
-void do_fdecomp_(int *nmax_in, int *mmax_in, char* outname[]);
+void do_fdecomp_(int *nmax_in, int *mmax_in, char* outname);
 
 /**
  * sets the scale of the box

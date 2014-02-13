@@ -1,4 +1,4 @@
-#include "fourier-decomp.h"
+#include "decompf2d.h"
 
 /**
  * setup the decomp, allocs the variable grid
@@ -33,7 +33,7 @@ void fill_grid_(int *i, int *j, double *val)
  * see also the example driver for another way to compute the coeffs
  */
 
-void do_fdecomp_(int* mmax_in, int* nmax_in, char* outname[])
+void do_fdecomp_(int* mmax_in, int* nmax_in, char* outname)
 {
   int mmax;
   int nmax;

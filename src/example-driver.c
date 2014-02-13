@@ -3,7 +3,7 @@
 #include <math.h>
 #include <assert.h>
 
-#include "fourier-decomp.h"
+#include "decompf2d.h"
 
 /**
  * ccs, 13.02.2014
@@ -53,9 +53,9 @@ int main (int argc, char* argv[]){
   printf("# input grid size: (%d x %d)\n", npts, npts);
 
   mmax = atoi(argv[3]);
-  assert(mmax > 0 && mmax < MMAXDECOMP);
+  assert(mmax > 0 && mmax < MAXMDECOMP);
   nmax = atoi(argv[4]);
-  assert(nmax > 0 && nmax < NMAXDECOMP);
+  assert(nmax > 0 && nmax < MAXNDECOMP);
   printf("# moments computed up to: %d %d\n", mmax, nmax);
   
   dx = 2*(fabs(xmin))/((double)npts-1);
