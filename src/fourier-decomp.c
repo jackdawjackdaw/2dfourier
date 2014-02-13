@@ -1,33 +1,10 @@
-#include "stdio.h"
-#include "stdlib.h"
-#include "math.h"
 #include <gsl/gsl_matrix.h>
 #include <gsl/gsl_vector.h>
 #include <gsl/gsl_sf.h>
 
+
 /**
- * ccs, 14.09.2012
- * functions to compute the Amn decomposition for a given array of points
- * 08.10.2012
- * now, how can we use this in R?
- */
-void compute_amn(int mmax, int nmax, gsl_matrix *array, int npts, gsl_matrix* AmnReal, gsl_matrix* AmnIm, double cmx, double cmy);
-void compute_com(gsl_matrix *array, int npts,double* cmx, double* cmy);
-void setup_fdecomp_(int *ngrid);
-void free_fdecomp_();
-void fill_grid_(int *i, int *j, double *val);
-void do_fdecomp_();
-
-/* sets the scale of the box
- */
-double xmin = -1;
-
-gsl_matrix* grid;
-int nptsGrid;
-
-// fns to be called from fortran
-/**
- * setup the decomp from fortran, this allocs the variable grid
+ * setup the decomp, allocs the variable grid
  */
 void setup_fdecomp_(int* ngrid)
 {
@@ -42,23 +19,45 @@ void free_fdecomp_()
 	gsl_matrix_free(grid);
 }
 
+/**
+ * insert energy density val into position i,j in the matrix
+ */
 void fill_grid_(int *i, int *j, double *val)
 {
 	//printf("#(c) (%d %d) = %lf\n", *i-1, *j-1, *val);
 	gsl_matrix_set(grid, *i-1, *j-1, *val);
 }
 
-// how can we label the output files?
-// should send evt number here
-void do_fdecomp_()
+/**
+ * compute the fourier decomposition of the now filled grid
+ * setup to be callable from fortran
+ * 
+ * results are written to a file given by outname
+ */
+
+void do_fdecomp_(int* mmax_in, int* nmax_in, char* outname[])
 {
-	int mmax=8;
-	int nmax=8;
+	int mmax;
+	int nmax;
 	int i,j;
 	double cmx =0.0, cmy=0.0;
 	FILE* fptr;
-	gsl_matrix * amnRe = gsl_matrix_alloc(2*mmax+1, nmax);
-	gsl_matrix * amnIm = gsl_matrix_alloc(2*mmax+1, nmax);
+	gsl_matrix * amnRe; 
+	gsl_matrix * amnIm;
+  char buffer[256];
+
+  if(*mmax_in <= 0 || *mmax_in > MAXMDECOMP){
+    mmax = MMAXDEFAULT;
+  } else {
+    mmax = *mmax_in;
+  }
+  if(*nmax_in <=0 || *nmax_in > MAXNDECOMP){
+    nmax = NMAXDEFAULT;
+  } else {
+    nmax = *nmax_in;
+  }
+  amnRe = gsl_matrix_alloc(2*mmax+1, nmax);
+  amnIm = gsl_matrix_alloc(2*mmax+1, nmax);
 
 	compute_com(grid, nptsGrid, &cmx, &cmy);
 	
@@ -66,9 +65,9 @@ void do_fdecomp_()
 	fprintf(stderr, "# started computing fdecomp\n");
 	compute_amn(mmax, nmax, grid, nptsGrid, amnRe, amnIm, cmx, cmy);
 	
-	// need to name this properly...
-	fptr = fopen("fdecomp.dat", "a");
-	fprintf(stderr, "# started writing fdecomp\n");
+	sprintf(buffer, "%s", outname);  
+	fptr = fopen(buffer, "a");
+	fprintf(stderr, "# started writing fdecomp to: %s\n", buffer);
 	// dump the decomp to file
 	fprintf(fptr, "#\n"); // sep events with a #
 	for(i = 0; i < (2*mmax+1); i++){
@@ -78,21 +77,26 @@ void do_fdecomp_()
 	}
 	fclose(fptr);
 	
-	fprintf(stderr, "# started computing fdecomp\n");
-	
 	gsl_matrix_free(amnRe);
 	gsl_matrix_free(amnIm);
 
 }
 
 
-// fns to do the decomp
 /**
- * compute the fourier decomposition of array to -m:m in angular components and 1:nmax in radial components
+ * Compute the fourier decomposition of array to -m:m in angular components and 1:nmax in radial components
  * 
- * array should a pointer to an initialized npts x npts grid containing the data we want to decompose
- * AmnReal and AmnIm should be allocated arrays of size (2*mmax+1) * nmax which will be filled with the coefficients
+ * Note that the gridding scheme used here is defined on [-1..1] x [-1..1], the cmx and cmy specified here should
+ * be given in these units. The function "compute_com" defined below can be used to do this.
  * 
+ * @arg mmax - largest angular moment computed
+ * @arg nmax - largest radial moment computed
+ * @arg array - 2d matrix (npts x npts) of energy density in the event
+ * @arg npts - number of points in in the array
+ * @arg AmnReal - 2d matrix ((2*mmax+1) x nmax), filled with Real parts of the coeffs on return
+ * @arg AmnIm - 2d matrix ((2*mmax+1) x nmax), filled with Im parts of the coeffs on return
+ * @arg cmx - x location of the CM of the event
+ * @arg cmy - y location of the CM of the event
  */ 
 void compute_amn(int mmax, int nmax, gsl_matrix *array, int npts, gsl_matrix* AmnReal, gsl_matrix* AmnIm, double cmx, double cmy)
 {
@@ -201,10 +205,16 @@ void compute_amn(int mmax, int nmax, gsl_matrix *array, int npts, gsl_matrix* Am
 	gsl_matrix_free(lamMat);
 }
 
-/*
- * compute the centre of mass of the grid
+/**
+ * compute the centre of mass of the grid (array)
+ * 
+ * the grid has coordinates [-1..1] x [-1..1] and the computed CM is returned in this 2d interval
+ * 
+ * @arg array (npts x npts) gridded energy density of the event
+ * @arg npts size of the grid
+ * @arg cmx - set to the x location of the cm
+ * @arg cmy - set to the y location of the cm
  */
-
 void compute_com(gsl_matrix *array, int npts,double* cmx, double* cmy)
 {
 	int i, j;
@@ -220,7 +230,6 @@ void compute_com(gsl_matrix *array, int npts,double* cmx, double* cmy)
 
 	gsl_vector *xvec = gsl_vector_alloc(npts);
 
-	// fill in r and Theta matrices
 	for(i = 0; i < npts; i++){
 		gsl_vector_set(xvec ,i, xmin + dx*i);
 	}
@@ -239,80 +248,5 @@ void compute_com(gsl_matrix *array, int npts,double* cmx, double* cmy)
 	*cmy = (ey / etot);
 }
 
-#ifdef BUILDBIN
-int main (int argc, char* argv[]){
-	FILE *fptr;
-	char buffer[256];
-	gsl_matrix *midplane;
-	gsl_matrix *AmnRe, *AmnIm;
-	int i, j;
-	int mmax=2, nmax=4;
-	int npts = 200;
-	int xtemp, ytemp;
-	double etemp;
 
-	double cmx = 0.0, cmy = 0.0;
-	double dx = 2*(fabs(xmin))/((double)npts-1);
 
-	double mod = 0.0;
-	
-	if(argc < 2){
-		printf("# run with path to midplane file\n");
-		exit(-1);
-	}
-
-	sprintf(buffer, "%s", argv[1]);
-	
-	printf("# reading from: %s\n", buffer);
-	
-	fptr = fopen(buffer, "r");
-	midplane = gsl_matrix_alloc(npts, npts);
-	
-
-	while(fscanf(fptr, "%d %d %*d %lf %*f %*f %*f %*f",
-							 &xtemp, &ytemp, &etemp) != EOF){
-		gsl_matrix_set(midplane, xtemp - 1, ytemp -1, etemp);
-	};
-	
-	fclose(fptr);
-
-	AmnRe = gsl_matrix_alloc((2*mmax+1), nmax);
-	AmnIm = gsl_matrix_alloc((2*mmax+1), nmax);
-
-	compute_com(midplane, npts, &cmx, &cmy);
-	
-	printf("# com: %lf %lf (%d %d)\n", cmx, cmy, (int)((cmx+(fabs(xmin)))/dx), (int)((cmy+(fabs(xmin)))/dx));
-
-	
-	compute_amn(mmax, nmax, midplane, npts, AmnRe, AmnIm, 0, 0); // first compute with cm at origin of coords
-
-	mod = 0;
-	for(i = 0; i < (2*mmax+1); i++){
-		for(j = 0; j < nmax; j++){
-			printf("(%d %d)[%lf %lf] ", -mmax+i, j, gsl_matrix_get(AmnRe, i, j), gsl_matrix_get(AmnIm, i,j));
-			mod += pow(gsl_matrix_get(AmnRe, i, j),2.0) + pow(gsl_matrix_get(AmnIm, i,j), 2.0);
-		}
-		printf("\n");
-	}
-	printf("Mod: %lf\n", mod);
-
-	xmin = -1.0;
-	
-	printf("## xmin = %lf\n", xmin);
-	compute_amn(mmax, nmax, midplane, npts, AmnRe, AmnIm, cmx, cmy); // first compute with cm at origin of coords
-	mod = 0;
-	for(i = 0; i < (2*mmax+1); i++){
-		for(j = 0; j < nmax; j++){
-			printf("(%d %d)[%lf %lf] ", -mmax+i, j, gsl_matrix_get(AmnRe, i, j), gsl_matrix_get(AmnIm, i,j));
-			mod += pow(gsl_matrix_get(AmnRe, i, j),2.0) + pow(gsl_matrix_get(AmnIm, i,j), 2.0);
-		}
-		printf("\n");
-	}
-	printf("Mod: %lf\n", mod);
-	
-	gsl_matrix_free(AmnRe);
-	gsl_matrix_free(AmnIm);
-	gsl_matrix_free(midplane);
-	return EXIT_SUCCESS;
-}
-#endif
