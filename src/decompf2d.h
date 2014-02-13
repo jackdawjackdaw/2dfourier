@@ -17,6 +17,13 @@ void free_fdecomp_();
 void fill_grid_(int *i, int *j, double *val);
 void do_fdecomp_(int *nmax_in, int *mmax_in, char* outname);
 
+/** compute and return the norms defined in the paper*/
+double compute_l2(int mmax, int nmax, gsl_matrix* AmnReal, gsl_matrix* AmnIm);
+double compute_m1(int mmax, int nmax, gsl_matrix* AmnReal, gsl_matrix* AmnIm);
+double compute_h1(int mmax, int nmax, gsl_matrix* AmnReal, gsl_matrix* AmnIm);  
+double compute_rsq(int mmax, int nmax, gsl_matrix* AmnReal, gsl_matrix* AmnIm);  
+
+
 /**
  * sets the scale of the box
  * the box (and grid) will run from [xmin..-xmin] x [xmin..-xmin]

@@ -59,6 +59,8 @@ int main (int argc, char* argv[]){
   printf("# moments computed up to: %d %d\n", mmax, nmax);
   
   dx = 2*(fabs(xmin))/((double)npts-1);
+  /** allocate a 2d gsl matrix that will store the event plane energy density 
+   * each cell in this grid should correspond to a hydro cell or similar */
   midplane = gsl_matrix_alloc(npts, npts);
 
   fptr = fopen(buffer, "r");
@@ -74,6 +76,7 @@ int main (int argc, char* argv[]){
   
   fclose(fptr);
 
+  /** allocate matrices to hold the real and im parts of the coeffs */
   AmnRe = gsl_matrix_alloc((2*mmax+1), nmax);
   AmnIm = gsl_matrix_alloc((2*mmax+1), nmax);
 
@@ -87,15 +90,17 @@ int main (int argc, char* argv[]){
   compute_amn(mmax, nmax, midplane, npts, AmnRe, AmnIm, cmx, cmy); // first compute with cm at origin of coords
 
   /* print out the coeffs and compute the L2 norm */
-  mod = 0;
   for(i = 0; i < (2*mmax+1); i++){
     for(j = 0; j < nmax; j++){
       printf("(%d %d)[%lf %lf] ", -mmax+i, j, gsl_matrix_get(AmnRe, i, j), gsl_matrix_get(AmnIm, i,j));
-      mod += pow(gsl_matrix_get(AmnRe, i, j),2.0) + pow(gsl_matrix_get(AmnIm, i,j), 2.0);
     }
     printf("\n");
   }
-  printf("Mod: %lf\n", mod);
+  printf("L2: %lf\n", compute_l2(mmax, nmax, AmnRe, AmnIm));
+  printf("M1: %lf\n", compute_m1(mmax, nmax, AmnRe, AmnIm));
+  printf("H1: %lf\n", compute_h1(mmax, nmax, AmnRe, AmnIm));
+  printf("Rsq: %lf\n", compute_rsq(mmax, nmax, AmnRe, AmnIm));
+  
   
   gsl_matrix_free(AmnRe);
   gsl_matrix_free(AmnIm);

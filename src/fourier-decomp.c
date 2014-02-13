@@ -243,4 +243,91 @@ void compute_com(gsl_matrix *array, int npts,double* cmx, double* cmy)
 }
 
 
+/**
+ * compute the L2 norm of the coeffs
+ * l2 = [ Sum | A_mn | ^2 ] ^{1/2}
+ */
+double compute_l2(int mmax, int nmax, gsl_matrix* AmnRe, gsl_matrix* AmnIm)
+{
+  double mod = 0.0;
+  int i, j;
+  /* loop over all the coeffs*/
+  for(i = 0; i < (2*mmax+1); i++){
+    for(j = 0; j < nmax; j++){
+      mod += pow(gsl_matrix_get(AmnRe, i, j),2.0) + pow(gsl_matrix_get(AmnIm, i,j), 2.0);
+    }
+  }
+  return(sqrt(mod));
+}
+
+/**
+ * compute the M1 norm of the coeffs
+ * m1 = [ Sum m^2 | A_mn | ^2 ] ^{1/2}
+ */
+double compute_m1(int mmax, int nmax, gsl_matrix* AmnRe, gsl_matrix* AmnIm)
+{
+  double mod = 0.0;
+  int i, j;
+  /* loop over all the coeffs*/
+  for(i = 0; i < (2*mmax+1); i++){
+    for(j = 0; j < nmax; j++){
+      mod += (i*i) * (pow(gsl_matrix_get(AmnRe, i, j),2.0) + pow(gsl_matrix_get(AmnIm, i,j), 2.0));
+    }
+  }
+  return(sqrt(mod));
+}
+
+/**
+ * compute the H1 norm of the coeffs
+ * h1 = [ Sum ( (\el^2 \lambda_{m,n}^2) / r_0^2 ) + 1 ) | A_mn | ^2 ] ^{1/2}
+ */
+double compute_h1(int mmax, int nmax, gsl_matrix* AmnRe, gsl_matrix* AmnIm)
+{
+  double mod = 0.0;
+  double htemp = 0.0;
+  
+  int i, j;
+  /* this is the cutoff radius you should check this if you adjust the xmin */
+  double rzero = 1.0; 
+  double ell = 1.0;
+  double lam = 0.0;
+  
+
+  int mtemp, ntemp = 0;
+  
+  /* loop over all the coeffs*/
+  for(i = 0; i < (2*mmax+1); i++){
+    for(j = 0; j < nmax; j++){
+      // the |Amn|^2 term
+      mod = (pow(gsl_matrix_get(AmnRe, i, j),2.0) + pow(gsl_matrix_get(AmnIm, i,j), 2.0));
+      // the appropriate bessel fn zero
+      ntemp = j + 1;
+      mtemp = -1.0 * mmax + i;
+      lam = gsl_sf_bessel_zero_Jnu(fabs(mtemp), ntemp);
+      htemp += ((lam*lam *ell*ell / rzero*rzero) + 1) * mod;
+    }
+  }
+  return(sqrt(htemp));
+}
+
+/**
+ * compute the Rsq norm of the coeffs
+ * Rsq = (H_1^2/L_2^2) - 1
+ * 
+ * if you have already computed L2 and h1 this is a bit of a time sink, since it calls them again
+ */
+double compute_rsq(int mmax, int nmax, gsl_matrix* AmnRe, gsl_matrix* AmnIm)
+{
+  double h1 = 0.0;
+  double l2 = 0.0;
+  double rnorm = 0.0;
+
+  h1 = compute_h1(mmax, nmax, AmnRe, AmnIm);
+  l2 = compute_l2(mmax, nmax, AmnRe, AmnIm);
+
+  rnorm = (h1*h1) / (l2*l2) - 1.0;
+
+  return(rnorm);
+}
+
 
