@@ -12,6 +12,7 @@ Christopher E. Coleman-Smith (Duke U.), Hannah Petersen (Duke U. & Frankfurt U.,
 Published in J.Phys. G40 (2013) 095103 
 
 Please use the following citation if you use this code
+
     \bibitem{ColemanSmith:2012ka} 
     C.~E.~Coleman-Smith, H.~Petersen and R.~L.~Wolpert,
     %``Classification of initial state granularity via 2d Fourier Expansion,''
