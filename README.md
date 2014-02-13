@@ -1,4 +1,6 @@
-# 2dfourier
+=======
+2dfourier
+=========
 C.Coleman-Smith (cec24@phy.duke.edu)
 
 Routines for carrying out a 2d Fourier decomposition for Heavy Ion events  and computing associated measures of event roughness. 
