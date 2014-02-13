@@ -7,8 +7,10 @@
 #include <math.h>
 
 /**
- * ccs, 14.09.2012
- * functions to compute the Amn decomposition for a given array of points
+ * @file decompf2d.h
+ * @Author ccs
+ * @date 14.09.2012
+ * @brief functions to compute the Amn decomposition for a given array of points
  */
 void compute_amn(int mmax, int nmax, gsl_matrix *array, int npts, gsl_matrix* AmnReal, gsl_matrix* AmnIm, double cmx, double cmy);
 void compute_com(gsl_matrix *array, int npts,double* cmx, double* cmy);

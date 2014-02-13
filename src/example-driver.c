@@ -6,10 +6,17 @@
 #include "decompf2d.h"
 
 /**
- * ccs, 13.02.2014
- * example driver routine, reads an input file and computes the decomposition moments Amn
- *
- * the number points to use in the grid and the maximum moments to compute are taken as arguments
+ * @file example-driver.c
+ * @Author ccs
+ * @date 14.09.2012
+ * @brief example driver routine, reads an input file and computes the decomposition moments Amn
+ * 
+ * 
+ * reads an input file and computes the Amn and reports the various moments defined.
+ * the number of points to use in the grid and the maximum moments to compute are taken as arguments
+ * run as: 
+ * f2d-driver-example ./example/example-event.dat 200 8 8 
+ * 
  * 
  * input file is a *2d* grid of energy density representing the initial-state of an event (or really any part of the evolution)
  * 
@@ -59,7 +66,7 @@ int main (int argc, char* argv[]){
   printf("# moments computed up to: %d %d\n", mmax, nmax);
   
   dx = 2*(fabs(xmin))/((double)npts-1);
-  /** allocate a 2d gsl matrix that will store the event plane energy density 
+  /* allocate a 2d gsl matrix that will store the event plane energy density 
    * each cell in this grid should correspond to a hydro cell or similar */
   midplane = gsl_matrix_alloc(npts, npts);
 
@@ -76,7 +83,7 @@ int main (int argc, char* argv[]){
   
   fclose(fptr);
 
-  /** allocate matrices to hold the real and im parts of the coeffs */
+  /* allocate matrices to hold the real and im parts of the coeffs */
   AmnRe = gsl_matrix_alloc((2*mmax+1), nmax);
   AmnIm = gsl_matrix_alloc((2*mmax+1), nmax);
 

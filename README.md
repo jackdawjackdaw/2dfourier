@@ -1,4 +1,4 @@
-2dfourier
+2dfourier {#mainpage}
 =========
 C.Coleman-Smith (cec24@phy.duke.edu)
 
