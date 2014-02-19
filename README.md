@@ -80,3 +80,4 @@ article [1], after consulting fig.4 and fig.5 we se that the printed out values 
 [2]: http://www.cmake.org/
 
 
+[![githalytics.com alpha](https://cruel-carlota.pagodabox.com/5b97c786bf37b481c44a987285473615 "githalytics.com")](http://githalytics.com/jackdawjackdaw/2dfourier)
